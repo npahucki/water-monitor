@@ -1,2 +1,3 @@
 certs/device/*
 .idea
+__pycache__
