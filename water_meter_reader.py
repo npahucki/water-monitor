@@ -1,45 +1,26 @@
-import threading
-import time
-import random
 import datetime
-import threading
+from datetime import datetime
+
 
 class WaterMeterDeviceReader:
-    def __init__(self, name, gpio_pin=None):
+    def __init__(self, name, pi_gpio, pin):
         self.name = name
-        self.__tally = 0
         self.__last_tally = 0
         self.__ts = datetime.datetime.now().timestamp()
-        self.__lock = threading.Lock()
 
+        pi_gpio.set_mode(pin, pi_gpio.INPUT)
+        pi_gpio.set_pull_up_down(pin, pi_gpio.PUD_UP)
 
-        if gpio_pin:
-            # TODO: Setting up pigpio for callbacks
-            pass
-        else:
-            # Go into mock mode
-            thread = threading.Thread(target=self.__mock_run, args=())
-            thread.daemon = True
-            thread.start()
-
-    def __mock_run(self):
-            while True:
-                self.__inc_tally(random.randint(0, 40))
-                time.sleep(1)
-
-    def __inc_tally(self, add):
-        self.__lock.acquire()
-        self.__tally = self.__tally + add
-        self.__lock.release()
-
+        self.__cb = pi_gpio.callback(pin, pi_gpio.EITHER_EDGE)
 
     def tally_and_reset(self):
         now = datetime.datetime.now().timestamp()
-        self.__lock.acquire()
+        new_tally = self.__cb.tally()
         last_tally = self.__last_tally
-        last_ts = self.__ts
-        self.__last_tally = self.__tally
-        self.__tally = 0
+        sample_start = self.__ts
+        sample_end = now
+
         self.__ts = now
-        self.__lock.release()
-        return (last_ts, now, last_tally, self.__last_tally)
+        self.__last_tally = new_tally
+
+        return sample_start, sample_end, last_tally, new_tally
