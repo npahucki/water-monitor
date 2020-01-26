@@ -13,7 +13,7 @@ RED_LED_PIN = 9
 JIMENEZ_SENSOR_PIN = 14
 PAHUCKI_SENSOR_PIN = 15
 
-logging.config.fileConfig(os.environ['LOGGING_CONF'] or 'logging.conf')
+logging.config.fileConfig(os.environ.get('LOGGING_CONF', default='logging.conf'))
 
 
 class LedStatusHandler:
@@ -45,11 +45,11 @@ class LogStatusHandler:
 logger = logging.getLogger('monitoring')
 
 def main():
-    if os.environ['MOCK'] == '1':
+    if os.environ.get('MOCK', default='0') == '1':
         status_handler = LogStatusHandler()
         readers = [
-            MockWaterMeterDeviceReader('Test Meter 1'),
-            MockWaterMeterDeviceReader('Test Meter 2'),
+            MockWaterMeterDeviceReader('TestMeter1'),
+            MockWaterMeterDeviceReader('TestMeter2'),
         ]
     else:
         pi = pigpio.pi()
@@ -59,15 +59,21 @@ def main():
             WaterMeterDeviceReader('PahuckiWaterMeter', pi, PAHUCKI_SENSOR_PIN)
         ]
 
+    metering = None
     try:
-        status_handler.ok()
         logger.info('Starting metering...')
         metering = Metering(readers, socket.gethostname(), status_handler, 5)
+        status_handler.ok()
         metering.run()
     except Exception:
         logger.critical('Exiting due to unexpected error %s' % traceback.format_exc())
         status_handler.not_ok()
+    except KeyboardInterrupt:
+        logger.info('Exiting at user request...')
+        status_handler.not_ok()
 
+    logger.info('Stopping metering...')
+    metering.stop()
     logger.info('Done.')
 
 

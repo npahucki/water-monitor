@@ -76,6 +76,7 @@ class Metering:
     def __run(self):
         self.__running = True
         self.__status_handler.ok()
+
         while self.__running:
             try:
                 for reader in self.__readers:
@@ -88,11 +89,11 @@ class Metering:
                     # When no water is flowing, or is flowing at the same rate as before
                     # And there is no need to update the shadow state this time around.
                     if last_ticks - new_ticks != 0:
-                        logger.debug('Updating shadow state for "%s"' % reader.name)
+                        logger.info('Updating shadow state for "%s" to %d ticks in %.04f seconds' % (reader.name, new_ticks, sample_seconds))
                         self.__update_shadow(reader.name, ts.isoformat(), new_ticks, sample_seconds)
 
                     if new_ticks > 0:
-                        logger.debug('Sending consumed message for "%s"' % reader.name)
+                        logger.info('Sending consumed message for "%s" with %d ticks in %.04f seconds' % (reader.name, new_ticks, sample_seconds))
                         self.__publish_reading(reader.name, ts.isoformat(), sample_seconds, new_ticks)
                 self.__status_handler.ok()
             except Exception:
