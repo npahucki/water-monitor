@@ -13,7 +13,8 @@ RED_LED_PIN = 9
 JIMENEZ_SENSOR_PIN = 14
 PAHUCKI_SENSOR_PIN = 15
 
-logging.config.fileConfig('logging.conf')
+logging.config.fileConfig(os.environ['LOGGING_CONF'] or 'logging.conf')
+
 
 class LedStatusHandler:
     def __init__(self, green_led, red_led):
@@ -64,7 +65,7 @@ def main():
         metering = Metering(readers, socket.gethostname(), status_handler, 5)
         metering.run()
     except Exception:
-        logger.error('Exiting due to unexpected error %s' % traceback.format_exc())
+        logger.critical('Exiting due to unexpected error %s' % traceback.format_exc())
         status_handler.not_ok()
 
     logger.info('Done.')

@@ -1,3 +1,4 @@
 certs/device/*
+*.log
 .idea
 __pycache__
