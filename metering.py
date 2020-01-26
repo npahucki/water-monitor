@@ -37,8 +37,8 @@ class Metering:
         client.configureEndpoint(AWS_IOT_ENDPOINT, 8883)
         client.configureCredentials(CAFilePath="certs/AmazonRootCA1.pem", KeyPath="certs/device/private.pem.key",
                                     CertificatePath="certs/device/certificate.pem.crt")
-        client.configureConnectDisconnectTimeout(30)  # 10 sec
-        client.configureMQTTOperationTimeout(5)  # 5 sec
+        client.configureConnectDisconnectTimeout(30)
+        client.configureMQTTOperationTimeout(30)
         client.configureAutoReconnectBackoffTime(1, 128, 20)
 
         # Shared connection with shadow
@@ -46,16 +46,18 @@ class Metering:
         mqtt_client.configureOfflinePublishQueueing(max_offline_queue_size, AWSIoTPythonSDK.MQTTLib.DROP_OLDEST)
         mqtt_client.configureDrainingFrequency(2)  # Draining: 2 Hz
 
+        logger.debug('Connecting to IOT Cloud MQTT Server....')
         client.connect()
         self.__shadow_client = client
         self.__mqtt_client = mqtt_client
 
         for reader in self.__readers:
             shadow = self.__shadow_client.createShadowHandlerWithName(reader.name, True)
-            shadow.shadowGet(self.__shadow_cb, 5)
+            shadow.shadowGet(self.__shadow_cb, 60)
             shadow.shadowRegisterDeltaCallback(self.__shadow_cb)
             self.__shadows[reader.name] = shadow
 
+        logger.debug('Connected to IOT Cloud, shadows created')
         return client
 
     def __publish_reading(self, meter_name, ts, sample_duration, ticks):
