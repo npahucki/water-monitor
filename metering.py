@@ -14,9 +14,19 @@ AWS_IOT_ENDPOINT = 'a2irkey2xs1s65-ats.iot.us-east-1.amazonaws.com'
 logger = logging.getLogger('metering')
 
 
+def touch_wt():
+    try:
+        with open('/dev/watchdog', 'r'):
+            pass
+    except Exception as e:
+        logger.warning('Failed to reset the watchdog timer', e)
+
 # noinspection PyBroadException
 class Metering:
-    def __init__(self, readers, client_id, status_handler, update_interval_secs=30):
+    def __init__(self, readers, client_id, status_handler, update_interval_secs=15, watchdog_enabled=False):
+        if update_interval_secs > 15 and watchdog_enabled:
+            raise ValueError("When watch dog is enabled, the update_interval_secs must be 15 seconds or less")
+
         self.__running = False
         self.__client_id = client_id
         self.__update_interval_secs = update_interval_secs
@@ -25,6 +35,7 @@ class Metering:
         self.__readers = readers
         self.__shadows = {}
         self.__status_handler = status_handler
+        self.__wt_enable = watchdog_enabled
 
     def __shadow_cb(self, payload, status, token):
         if status != 'accepted':
@@ -99,6 +110,8 @@ class Metering:
             except Exception:
                 self.__status_handler.not_ok()
                 logging.error(traceback.format_exc())
+            if self.__wt_enable:
+                touch_wt()
             sleep(self.__update_interval_secs)
 
     def run(self):
