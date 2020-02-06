@@ -62,7 +62,7 @@ def main():
     metering = None
     try:
         logger.info('Starting metering...')
-        metering = Metering(readers, socket.gethostname(), status_handler, 10, True)
+        metering = Metering(readers, socket.gethostname(), status_handler, 15, True)
         status_handler.ok()
         metering.run()
     except Exception:
