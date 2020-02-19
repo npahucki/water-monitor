@@ -68,7 +68,7 @@ class Metering:
             shadow.shadowRegisterDeltaCallback(self.__shadow_cb)
             self.__shadows[reader.name] = shadow
 
-        logger.debug('Connected to IOT Cloud, shadows created')
+        logger.info('Connected to IOT Cloud, shadows created')
         return client
 
     def __publish_reading(self, meter_name, ts, sample_duration, ticks):
